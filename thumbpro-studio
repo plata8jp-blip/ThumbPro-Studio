@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThumbPro Studio | Generador de Miniaturas Virales</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#090d16',
+                        panelBg: '#121929',
+                        cardBg: '#1a233a',
+                        accent: '#6366f1',
+                        accentHover: '#4f46e5',
+                        neonPink: '#ec4899',
+                        neonCyan: '#06b6d4',
+                        neonYellow: '#facc15'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        impact: ['Impact', 'sans-serif'],
+                        anton: ['Anton', 'sans-serif'],
+                    }
+                }
+            }      
+        }
+    </script>
+    <!-- Google Fonts for Bold Thumbnail Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700;900&family=Montserrat:wght@900&family=Outfit:wght@800&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            background-color: #090d16;
+            color: #f8fafc;
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090d16;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+        .canvas-container {
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-darkBg text-slate-100 selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header / Navbar -->
+    <header class="border-b border-slate-800 bg-panelBg/80 backdrop-blur-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-black text-xl tracking-wider bg-gradient-to-r from-white via-indigo-200 to-indigo-400 bg-clip-text text-transparent">THUMB<span class="text-indigo-500">PRO</span></h1>
+                    <p class="text-xs text-slate-400 font-medium">Editor de Miniaturas Virales PRO</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <button onclick="openProModal()" class="hidden sm:flex items-center space-x-2 px-4 py-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold text-sm shadow-lg shadow-pink-500/25 transition-all transform hover:scale-105">
+                    <i data-lucide="crown" class="w-4 h-4 text-yellow-300"></i>
+                    <span>Versión ULTRA PRO (€4.99)</span>
+                </button>
+                <button onclick="downloadThumbnail()" class="flex items-center space-x-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm shadow-lg shadow-indigo-600/30 transition-all transform hover:scale-105">
+                    <i data-lucide="download" class="w-4 h-4"></i>
+                    <span>Exportar HD</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- LEFT COLUMN: Editing Controls (5 cols) -->
+        <section class="lg:col-span-5 bg-panelBg border border-slate-800/80 rounded-2xl p-5 shadow-xl space-y-6">
+            
+            <!-- Format Selector -->
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Formato de Video</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="setFormat('16:9')" id="btn-format-16-9" class="flex items-center justify-center space-x-2 py-2.5 px-3 rounded-xl border border-indigo-500 bg-indigo-500/10 text-indigo-300 font-semibold text-sm transition-all">
+                        <i data-lucide="monitor" class="w-4 h-4"></i>
+                        <span>YouTube (16:9)</span>
+                    </button>
+                    <button onclick="setFormat('9:16')" id="btn-format-9-16" class="flex items-center justify-center space-x-2 py-2.5 px-3 rounded-xl border border-slate-700 bg-cardBg text-slate-400 hover:text-white font-semibold text-sm transition-all">
+                        <i data-lucide="smartphone" class="w-4 h-4"></i>
+                        <span>Shorts/Reels (9:16)</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tabs Navigation -->
+            <div class="flex border-b border-slate-800 space-x-2">
+                <button onclick="switchTab('bg')" id="tab-bg" class="pb-2.5 px-3 font-bold text-sm border-b-2 border-indigo-500 text-indigo-400 transition-all flex items-center space-x-1.5">
+                    <i data-lucide="image" class="w-4 h-4"></i>
+                    <span>Fondo</span>
+                </button>
+                <button onclick="switchTab('text')" id="tab-text" class="pb-2.5 px-3 font-semibold text-sm border-b-2 border-transparent text-slate-400 hover:text-white transition-all flex items-center space-x-1.5">
+                    <i data-lucide="type" class="w-4 h-4"></i>
+                    <span>Textos</span>
+                </button>
+                <button onclick="switchTab('effects')" id="tab-effects" class="pb-2.5 px-3 font-semibold text-sm border-b-2 border-transparent text-slate-400 hover:text-white transition-all flex items-center space-x-1.5">
+                    <i data-lucide="sliders" class="w-4 h-4"></i>
+                    <span>Filtros</span>
+                </button>
+                <button onclick="switchTab('stickers')" id="tab-stickers" class="pb-2.5 px-3 font-semibold text-sm border-b-2 border-transparent text-slate-400 hover:text-white transition-all flex items-center space-x-1.5">
+                    <i data-lucide="sticker" class="w-4 h-4"></i>
+                    <span>Stickers</span>
+                </button>
+            </div>
+
+            <!-- TAB 1: Background Controls -->
+            <div id="content-bg" class="space-y-4 tab-content">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Subir Imagen de Fondo</label>
+                    <label class="flex flex-col items-center justify-center w-full h-28 border-2 border-slate-700 border-dashed rounded-xl cursor-pointer bg-cardBg hover:bg-slate-800/60 transition-all">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                            <i data-lucide="upload-cloud" class="w-8 h-8 mb-2 text-indigo-400"></i>
+                            <p class="text-xs text-slate-300 font-medium">Haz clic para subir foto o arrástrala</p>
+                            <p class="text-[10px] text-slate-500 mt-1">PNG, JPG, WEBP (HD recomendado)</p>
+                        </div>
+                        <input type="file" id="bg-file-input" accept="image/*" class="hidden" onchange="loadCustomBackground(event)">
+                    </label>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Fondos Preset Virales</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button onclick="setPresetBackground('gaming')" class="h-16 rounded-xl bg-gradient-to-br from-indigo-900 to-purple-900 border-2 border-indigo-500/50 hover:border-indigo-400 relative overflow-hidden group">
+                            <span class="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all flex items-center justify-center text-xs font-bold text-white">Gaming</span>
+                        </button>
+                        <button onclick="setPresetBackground('tech')" class="h-16 rounded-xl bg-gradient-to-br from-cyan-900 to-blue-950 border-2 border-slate-700 hover:border-cyan-400 relative overflow-hidden group">
+                            <span class="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all flex items-center justify-center text-xs font-bold text-white">Tech</span>
+                        </button>
+                        <button onclick="setPresetBackground('neon')" class="h-16 rounded-xl bg-gradient-to-br from-pink-900 via-purple-950 to-amber-900 border-2 border-slate-700 hover:border-pink-400 relative overflow-hidden group">
+                            <span class="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all flex items-center justify-center text-xs font-bold text-white">Neon</span>
+                        </button>
+                        <button onclick="setPresetBackground('dark')" class="h-16 rounded-xl bg-gradient-to-br from-slate-900 to-black border-2 border-slate-700 hover:border-slate-500 relative overflow-hidden group">
+                            <span class="absolute inset-0 bg-black/30 group-hover:bg-transparent transition-all flex items-center justify-center text-xs font-bold text-white">Dark</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="space-y-3 pt-2">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-semibold text-slate-300">Desenfoque de Fondo (Blur)</span>
+                        <span id="blur-val" class="text-xs font-mono text-indigo-400">0px</span>
+                    </div>
+                    <input type="range" id="bg-blur" min="0" max="20" value="0" class="w-full accent-indigo-500 bg-slate-800 rounded-lg h-2 cursor-pointer" oninput="updateState()">
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-semibold text-slate-300">Viñeta (Oscurecer bordes)</span>
+                        <span id="vignette-val" class="text-xs font-mono text-indigo-400">40%</span>
+                    </div>
+                    <input type="range" id="bg-vignette" min="0" max="100" value="40" class="w-full accent-indigo-500 bg-slate-800 rounded-lg h-2 cursor-pointer" oninput="updateState()">
+                </div>
+            </div>
+
+            <!-- TAB 2: Text Controls -->
+            <div id="content-text" class="space-y-5 tab-content hidden">
+                <!-- Text 1 -->
+                <div class="p-3.5 bg-cardBg border border-slate-800 rounded-xl space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-indigo-400 uppercase">Texto Principal (1)</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="t1-active" checked onchange="updateState()" class="sr-only peer">
+                            <div class="w-7 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-indigo-600"></div>
+                        </label>
+                    </div>
+                    <input type="text" id="t1-text" value="¡GIRA 100X!" oninput="updateState()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 font-bold">
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[10px] text-slate-400 block mb-1">Fuente</label>
+                            <select id="t1-font" onchange="updateState()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                                <option value="Anton">Anton (Viral)</option>
+                                <option value="Impact">Impact Classic</option>
+                                <option value="Outfit">Outfit Bold</option>
+                                <option value="Montserrat">Montserrat Black</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-400 block mb-1">Color Principal</label>
+                            <div class="flex items-center space-x-2">
+                                <input type="color" id="t1-color" value="#facc15" onchange="updateState()" class="w-8 h-8 rounded-lg bg-transparent cursor-pointer">
+                                <span class="text-xs font-mono text-slate-400" id="t1-color-hex">#facc15</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[10px] text-slate-400 block mb-1">Color de Trazo (Stroke)</label>
+                            <input type="color" id="t1-st-color" value="#000000" onchange="updateState()" class="w-8 h-8 rounded-lg bg-transparent cursor-pointer">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-400 block mb-1">Grosor Trazo</label>
+                            <input type="range" id="t1-st-width" min="0" max="25" value="8" class="w-full accent-indigo-500 mt-2" oninput="updateState()">
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[10px] text-slate-400">Tamaño de Texto</span>
+                            <span id="t1-size-val" class="text-[10px] font-mono text-indigo-400">65px</span>
+                        </div>
+                        <input type="range" id="t1-size" min="30" max="120" value="65" class="w-full accent-indigo-500 bg-slate-800 rounded-lg h-2 cursor-pointer" oninput="updateState()">
+                    </div>
+                </div>
+
+                <!-- Text 2 -->
+                <div class="p-3.5 bg-cardBg border border-slate-800 rounded-xl space-y-3">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-pink-400 uppercase">Texto Secundario (2)</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="t2-active" checked onchange="updateState()" class="sr-only peer">
+                            <div class="w-7 h-4 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-pink-600"></div>
+                        </label>
+                    </div>
+                    <input type="text" id="t2-text" value="¡ESTO ES INCREÍBLE!" oninput="updateState()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-pink-500 font-bold">
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[10px] text-slate-400 block mb-1">Fuente</label>
+                            <select id="t2-font" onchange="updateState()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                                <option value="Anton">Anton (Viral)</option>
+                                <option value="Impact">Impact Classic</option>
+                                <option value="Outfit">Outfit Bold</option>
+                                <option value="Montserrat">Montserrat Black</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-400 block mb-1">Color Principal</label>
+                            <div class="flex items-center space-x-2">
+                                <input type="color" id="t2-color" value="#ffffff" onchange="updateState()" class="w-8 h-8 rounded-lg bg-transparent cursor-pointer">
+                                <span class="text-xs font-mono text-slate-400" id="t2-color-hex">#ffffff</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[10px] text-slate-400">Tamaño de Texto</span>
+                            <span id="t2-size-val" class="text-[10px] font-mono text-pink-400">45px</span>
+                        </div>
+                        <input type="range" id="t2-size" min="20" max="100" value="45" class="w-full accent-pink-500 bg-slate-800 rounded-lg h-2 cursor-pointer" oninput="updateState()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: Filters & Adjustments -->
+            <div id="content-effects" class="space-y-4 tab-content hidden">
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-semibold text-slate-300">Brillo (Brightness)</span>
+                        <span id="bright-val" class="text-xs font-mono text-indigo-400">100%</span>
+                    </div>
+                    <input type="range" id="filter-brightness" min="50" max="150" value="100" class="w-full accent-indigo-500 bg-slate-800 rounded-lg h-2 cursor-pointer" oninput="updateState()">
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-semibold text-slate-300">Contraste Épico</span>
+                        <span id="contrast-val" class="text-xs font-mono text-indigo-400">110%</span>
+                    </div>
+                    <input type="range" id="filter-contrast" min="80" max="200" value="110" class="w-full accent-indigo-500 bg-slate-800 rounded-lg h-2 cursor-pointer" oninput="updateState()">
+                </div>
+
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-semibold text-slate-300">Saturación de Color</span>
+                        <span id="saturate-val" class="text-xs font-mono text-indigo-400">120%</span>
+                    </div>
+                    <input type="range" id="filter-saturate" min="50" max="200" value="120" class="w-full accent-indigo-500 bg-slate-800 rounded-lg h-2 cursor-pointer" oninput="updateState()">
+                </div>
+            </div>
+
+            <!-- TAB 4: Stickers & Elements -->
+            <div id="content-stickers" class="space-y-4 tab-content hidden">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Elementos de Atención</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button onclick="addSticker('🔥')" class="p-3 bg-cardBg border border-slate-700 hover:border-indigo-500 rounded-xl text-2xl flex items-center justify-center transition-all hover:scale-105">🔥</button>
+                        <button onclick="addSticker('😱')" class="p-3 bg-cardBg border border-slate-700 hover:border-indigo-500 rounded-xl text-2xl flex items-center justify-center transition-all hover:scale-105">😱</button>
+                        <button onclick="addSticker('⚡')" class="p-3 bg-cardBg border border-slate-700 hover:border-indigo-500 rounded-xl text-2xl flex items-center justify-center transition-all hover:scale-105">⚡</button>
+                        <button onclick="addSticker('❌')" class="p-3 bg-cardBg border border-slate-700 hover:border-indigo-500 rounded-xl text-2xl flex items-center justify-center transition-all hover:scale-105">❌</button>
+                        <button onclick="addSticker('✅')" class="p-3 bg-cardBg border border-slate-700 hover:border-indigo-500 rounded-xl text-2xl flex items-center justify-center transition-all hover:scale-105">✅</button>
+                        <button onclick="addSticker('💰')" class="p-3 bg-cardBg border border-slate-700 hover:border-indigo-500 rounded-xl text-2xl flex items-center justify-center transition-all hover:scale-105">💰</button>
+                        <button onclick="addSticker('🚀')" class="p-3 bg-cardBg border border-slate-700 hover:border-indigo-500 rounded-xl text-2xl flex items-center justify-center transition-all hover:scale-105">🚀</button>
+                        <button onclick="addSticker('⭐')" class="p-3 bg-cardBg border border-slate-700 hover:border-indigo-500 rounded-xl text-2xl flex items-center justify-center transition-all hover:scale-105">⭐</button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Añadir Imagen Recortada / Sujeto</label>
+                    <label class="flex flex-col items-center justify-center w-full h-20 border-2 border-slate-700 border-dashed rounded-xl cursor-pointer bg-cardBg hover:bg-slate-800/60 transition-all">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="user-plus" class="w-5 h-5 text-pink-400"></i>
+                            <span class="text-xs text-slate-300 font-medium">Subir Sujeto o PNG flotante</span>
+                        </div>
+                        <input type="file" id="subject-file-input" accept="image/*" class="hidden" onchange="loadCustomSubject(event)">
+                    </label>
+                </div>
+
+                <div class="pt-2">
+                    <button onclick="clearStickers()" class="w-full py-2 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl text-xs font-semibold transition-all">
+                        Eliminar Elementos Flotantes
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Action Buttons -->
+            <div class="pt-2 border-t border-slate-800 flex items-center space-x-3">
+                <button onclick="resetAll()" class="flex-1 py-2.5 px-4 rounded-xl border border-slate-700 bg-cardBg hover:bg-slate-800 text-slate-300 font-semibold text-xs transition-all flex items-center justify-center space-x-1.5">
+                    <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                    <span>Restablecer</span>
+                </button>
+                <button onclick="randomizeThumbnail()" class="flex-1 py-2.5 px-4 rounded-xl border border-indigo-500/50 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 font-semibold text-xs transition-all flex items-center justify-center space-x-1.5">
+                    <i data-lucide="wand-2" class="w-3.5 h-3.5"></i>
+                    <span>Viral Auto</span>
+                </button>
+            </div>
+
+        </section>
+
+        <!-- RIGHT COLUMN: Live Canvas Preview (7 cols) -->
+        <section class="lg:col-span-7 flex flex-col items-center space-y-4">
+            
+            <div class="w-full flex items-center justify-between px-2">
+                <div class="flex items-center space-x-2">
+                    <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-300">Lienzo en Vivo (Render HD)</span>
+                </div>
+                <div class="text-xs text-slate-400 font-mono" id="canvas-dimensions-label">1280 x 720 px</div>
+            </div>
+
+            <!-- Canvas Wrapper -->
+            <div class="canvas-container w-full bg-black rounded-2xl overflow-hidden border border-slate-800 relative flex items-center justify-center p-2 group">
+                <canvas id="thumbnail-canvas" class="w-full h-auto rounded-xl shadow-2xl cursor-crosshair"></canvas>
+                
+                <!-- Floating Hint on Canvas -->
+                <div class="absolute bottom-4 right-4 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-700 text-[11px] text-slate-300 pointer-events-none flex items-center space-x-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                    <i data-lucide="move" class="w-3.5 h-3.5 text-indigo-400"></i>
+                    <span>Arrastra los textos y stickers libremente</span>
+                </div>
+            </div>
+
+            <!-- Pro Banner Callout -->
+            <div class="w-full bg-gradient-to-r from-indigo-950/80 via-purple-950/80 to-pink-950/80 border border-indigo-500/30 rounded-2xl p-4 flex items-center justify-between shadow-lg">
+                <div class="flex items-center space-x-3">
+                    <div class="h-10 w-10 rounded-xl bg-pink-500/20 border border-pink-500/40 flex items-center justify-center text-pink-400 shrink-0">
+                        <i data-lucide="zap" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-sm font-bold text-white">Desbloquea efectos de iluminación 4K y plantillas VIP</h4>
+                        <p class="text-xs text-slate-400">Acceso ilimitado a fuentes exclusivas, IA de rostros y exportación sin marca de agua.</p>
+                    </div>
+                </div>
+                <button onclick="openProModal()" class="shrink-0 ml-4 px-4 py-2 rounded-xl bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold text-xs shadow-lg shadow-pink-500/25 transition-all">
+                    Mejorar PRO (€4.99)
+                </button>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Stripe Simulation Modal -->
+    <div id="pro-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+        <div class="bg-panelBg border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative space-y-6">
+            <button onclick="closeProModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-all">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+
+            <div class="text-center space-y-2">
+                <div class="h-14 w-14 rounded-2xl bg-gradient-to-tr from-pink-500 to-purple-600 mx-auto flex items-center justify-center shadow-lg shadow-pink-500/30">
+                    <i data-lucide="crown" class="w-7 h-7 text-yellow-300"></i>
+                </div>
+                <h3 class="text-xl font-extrabold text-white">ThumbPro Studio ULTRA</h3>
+                <p class="text-xs text-slate-400">Lleva tus miniaturas al siguiente nivel con funciones profesionales ilimitadas.</p>
+            </div>
+
+            <div class="bg-cardBg border border-slate-800 rounded-2xl p-4 space-y-3">
+                <div class="flex items-center space-x-3 text-xs text-slate-300">
+                    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                    <span>Exportación en 4K Ultra HD sin compresión</span>
+                </div>
+                <div class="flex items-center space-x-3 text-xs text-slate-300">
+                    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                    <span>Efectos de resplandor neón y sombras 3D avanzadas</span>
+                </div>
+                <div class="flex items-center space-x-3 text-xs text-slate-300">
+                    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                    <span>Acceso a +50 plantillas virales de creadores top</span>
+                </div>
+                <div class="flex items-center space-x-3 text-xs text-slate-300">
+                    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+                    <span>Licencia comercial completa para YouTube y TikTok</span>
+                </div>
+            </div>
+
+            <div class="flex items-baseline justify-between px-1">
+                <span class="text-sm font-semibold text-slate-400">Pago único vitalicio</span>
+                <span class="text-2xl font-black text-white">€4.99 <span class="text-xs font-normal text-slate-400">/ único</span></span>
+            </div>
+
+            <button onclick="openCheckout()" class="w-full py-3.5 px-4 rounded-xl bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-600 hover:opacity-95 text-white font-extrabold text-sm shadow-xl shadow-pink-500/30 transition-all transform hover:scale-[1.02] flex items-center justify-center space-x-2">
+                <i data-lucide="lock" class="w-4 h-4"></i>
+                <span>Desbloquear Acceso PRO Seguro</span>
+            </button>
+
+            <p class="text-[10px] text-center text-slate-500">Pagos procesados de forma cifrada mediante Stripe. Acepta Apple Pay, Google Pay y Tarjeta.</p>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 border border-slate-700 text-white px-4 py-3 rounded-xl shadow-2xl flex items-center space-x-3 transform translate-y-32 opacity-0 transition-all duration-300 z-50">
+        <div id="toast-icon" class="text-emerald-400"></div>
+        <div>
+            <p id="toast-title" class="text-xs font-bold"></p>
+            <p id="toast-desc" class="text-[10px] text-slate-400"></p>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Core -->
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Canvas Setup
+        const canvas = document.getElementById('thumbnail-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // App State
+        let currentFormat = '16:9'; // '16:9' or '9:16'
+        let canvasWidth = 1280;
+        let canvasHeight = 720;
+
+        let bgImage = null;
+        let bgPreset = 'gaming';
+        let subjectImage = null;
+
+        let stickers = []; // Array of stickers/emojis on canvas
+        let activeDragItem = null; // Can be 't1', 't2', or sticker index
+
+        // Initial positions & states
+        let state = {
+            format: '16:9',
+            blur: 0,
+            vignette: 40,
+            brightness: 100,
+            contrast: 110,
+            saturate: 120,
+            t1: {
+                active: true,
+                text: '¡GIRA 100X!',
+                font: 'Anton',
+                color: '#facc15',
+                strokeColor: '#000000',
+                strokeWidth: 8,
+                size: 65,
+                x: 640,
+                y: 220
+            },
+            t2: {
+                active: true,
+                text: '¡ESTO ES INCREÍBLE!',
+                font: 'Anton',
+                color: '#ffffff',
+                strokeColor: '#000000',
+                strokeWidth: 6,
+                size: 45,
+                x: 640,
+                y: 540
+            }
+        };
+
+        // Preset background generators
+        function createPresetBackground(type) {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 1280;
+            tempCanvas.height = 720;
+            const tCtx = tempCanvas.getContext('2d');
+
+            if (type === 'gaming') {
+                let grad = tCtx.createLinearGradient(0, 0, 1280, 720);
+                grad.addColorStop(0, '#311042');
+                grad.addColorStop(0.5, '#120826');
+                grad.addColorStop(1, '#05020c');
+                tCtx.fillStyle = grad;
+                tCtx.fillRect(0, 0, 1280, 720);
+
+                // Add glowing background geometric effects
+                tCtx.fillStyle = 'rgba(99, 102, 241, 0.15)';
+                tCtx.beginPath();
+                tCtx.arc(300, 200, 350, 0, Math.PI * 2);
+                tCtx.fill();
+
+                tCtx.fillStyle = 'rgba(236, 72, 153, 0.15)';
+                tCtx.beginPath();
+                tCtx.arc(1000, 500, 400, 0, Math.PI * 2);
+                tCtx.fill();
+            } else if (type === 'tech') {
+                let grad = tCtx.createLinearGradient(0, 0, 1280, 720);
+                grad.addColorStop(0, '#042f2e');
+                grad.addColorStop(0.5, '#082f49');
+                grad.addColorStop(1, '#020617');
+                tCtx.fillStyle = grad;
+                tCtx.fillRect(0, 0, 1280, 720);
+
+                // Tech grid lines
+                tCtx.strokeStyle = 'rgba(6, 182, 212, 0.1)';
+                tCtx.lineWidth = 2;
+                for (let i = 0; i < 1280; i += 60) {
+                    tCtx.beginPath();
+                    tCtx.moveTo(i, 0);
+                    tCtx.lineTo(i, 720);
+                    tCtx.stroke();
+                }
+            } else if (type === 'neon') {
+                let grad = tCtx.createLinearGradient(0, 0, 1280, 720);
+                grad.addColorStop(0, '#581c87');
+                grad.addColorStop(0.5, '#831843');
+                grad.addColorStop(1, '#18181b');
+                tCtx.fillStyle = grad;
+                tCtx.fillRect(0, 0, 1280, 720);
+            } else {
+                let grad = tCtx.createLinearGradient(0, 0, 1280, 720);
+                grad.addColorStop(0, '#1e293b');
+                grad.addColorStop(1, '#020617');
+                tCtx.fillStyle = grad;
+                tCtx.fillRect(0, 0, 1280, 720);
+            }
+
+            let img = new Image();
+            img.src = tempCanvas.toDataURL();
+            img.onload = () => {
+                bgImage = img;
+                renderCanvas();
+            };
+        }
+
+        // Set initial preset
+        createPresetBackground('gaming');
+
+        // Format selector logic
+        function setFormat(fmt) {
+            currentFormat = fmt;
+            const btn16 = document.getElementById('btn-format-16-9');
+            const btn9 = document.getElementById('btn-format-9-16');
+            const dimLabel = document.getElementById('canvas-dimensions-label');
+
+            if (fmt === '16:9') {
+                canvasWidth = 1280;
+                canvasHeight = 720;
+                btn16.className = "flex items-center justify-center space-x-2 py-2.5 px-3 rounded-xl border border-indigo-500 bg-indigo-500/10 text-indigo-300 font-semibold text-sm transition-all";
+                btn9.className = "flex items-center justify-center space-x-2 py-2.5 px-3 rounded-xl border border-slate-700 bg-cardBg text-slate-400 hover:text-white font-semibold text-sm transition-all";
+                dimLabel.innerText = "1280 x 720 px (YouTube)";
+            } else {
+                canvasWidth = 720;
+                canvasHeight = 1280;
+                btn9.className = "flex items-center justify-center space-x-2 py-2.5 px-3 rounded-xl border border-indigo-500 bg-indigo-500/10 text-indigo-300 font-semibold text-sm transition-all";
+                btn16.className = "flex items-center justify-center space-x-2 py-2.5 px-3 rounded-xl border border-slate-700 bg-cardBg text-slate-400 hover:text-white font-semibold text-sm transition-all";
+                dimLabel.innerText = "720 x 1280 px (Shorts / Reels)";
+            }
+            renderCanvas();
+        }
+
+        // Tabs logic
+        function switchTab(tabId) {
+            const tabs = ['bg', 'text', 'effects', 'stickers'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-${t}`);
+                const content = document.getElementById(`content-${t}`);
+                if (t === tabId) {
+                    btn.className = "pb-2.5 px-3 font-bold text-sm border-b-2 border-indigo-500 text-indigo-400 transition-all flex items-center space-x-1.5";
+                    content.classList.remove('hidden');
+                } else {
+                    btn.className = "pb-2.5 px-3 font-semibold text-sm border-b-2 border-transparent text-slate-400 hover:text-white transition-all flex items-center space-x-1.5";
+                    content.classList.add('hidden');
+                }
+            });
+        }
+
+        // Update state from DOM inputs
+        function updateState() {
+            state.blur = parseInt(document.getElementById('bg-blur').value);
+            state.vignette = parseInt(document.getElementById('bg-vignette').value);
+            document.getElementById('blur-val').innerText = state.blur + 'px';
+            document.getElementById('vignette-val').innerText = state.vignette + '%';
+
+            state.t1.active = document.getElementById('t1-active').checked;
+            state.t1.text = document.getElementById('t1-text').value;
+            state.t1.font = document.getElementById('t1-font').value;
+            state.t1.color = document.getElementById('t1-color').value;
+            document.getElementById('t1-color-hex').innerText = state.t1.color;
+            state.t1.strokeColor = document.getElementById('t1-st-color').value;
+            state.t1.strokeWidth = parseInt(document.getElementById('t1-st-width').value);
+            state.t1.size = parseInt(document.getElementById('t1-size').value);
+            document.getElementById('t1-size-val').innerText = state.t1.size + 'px';
+
+            state.t2.active = document.getElementById('t2-active').checked;
+            state.t2.text = document.getElementById('t2-text').value;
+            state.t2.font = document.getElementById('t2-font').value;
+            state.t2.color = document.getElementById('t2-color').value;
+            document.getElementById('t2-color-hex').innerText = state.t2.color;
+            state.t2.size = parseInt(document.getElementById('t2-size').value);
+            document.getElementById('t2-size-val').innerText = state.t2.size + 'px';
+
+            state.brightness = parseInt(document.getElementById('filter-brightness').value);
+            state.contrast = parseInt(document.getElementById('filter-contrast').value);
+            state.saturate = parseInt(document.getElementById('filter-saturate').value);
+            document.getElementById('bright-val').innerText = state.brightness + '%';
+            document.getElementById('contrast-val').innerText = state.contrast + '%';
+            document.getElementById('saturate-val').innerText = state.saturate + '%';
+
+            renderCanvas();
+        }
+
+        // Custom Background upload
+        function loadCustomBackground(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        bgImage = img;
+                        renderCanvas();
+                        showToast('Imagen de fondo cargada', 'Fondo aplicado con éxito', 'success');
+                    }
+                    img.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function setPresetBackground(type) {
+            createPresetBackground(type);
+            showToast('Preset aplicado', `Fondo ${type} activado`, 'success');
+        }
+
+        // Custom Subject upload
+        function loadCustomSubject(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        subjectImage = {
+                            img: img,
+                            x: canvasWidth * 0.55,
+                            y: canvasHeight * 0.1,
+                            width: canvasWidth * 0.4,
+                            height: canvasHeight * 0.8
+                        };
+                        renderCanvas();
+                        showToast('Sujeto añadido', 'Imagen flotante colocada en el lienzo', 'success');
+                    }
+                    img.src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Add stickers / emojis
+        function addSticker(emoji) {
+            stickers.push({
+                type: 'emoji',
+                content: emoji,
+                x: canvasWidth * (0.2 + Math.random() * 0.6),
+                y: canvasHeight * (0.3 + Math.random() * 0.4),
+                size: 90
+            });
+            renderCanvas();
+            showToast('Elemento añadido', `Sticker ${emoji} insertado`, 'success');
+        }
+
+        function clearStickers() {
+            stickers = [];
+            subjectImage = null;
+            renderCanvas();
+            showToast('Limpio', 'Se han borrado los stickers y sujetos', 'info');
+        }
+
+        // Main Canvas Render Engine
+        function renderCanvas() {
+            canvas.width = canvasWidth;
+            canvas.height = canvasHeight;
+
+            ctx.save();
+
+            // Apply global filters
+            ctx.filter = `brightness(${state.brightness}%) contrast(${state.contrast}%) saturate(${state.saturate}%) blur(${state.blur}px)`;
+
+            // Draw Background Image
+            if (bgImage) {
+                ctx.drawImage(bgImage, 0, 0, canvasWidth, canvasHeight);
+            }
+
+            ctx.restore();
+
+            // Draw Vignette effect
+            if (state.vignette > 0) {
+                let grad = ctx.createRadialGradient(canvasWidth/2, canvasHeight/2, canvasWidth*0.2, canvasWidth/2, canvasHeight/2, canvasWidth*0.8);
+                grad.addColorStop(0, 'rgba(0,0,0,0)');
+                grad.addColorStop(1, `rgba(0,0,0,${state.vignette / 100})`);
+                ctx.fillStyle = grad;
+                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            }
+
+            // Draw Subject / Cutout image if present
+            if (subjectImage) {
+                ctx.drawImage(subjectImage.img, subjectImage.x, subjectImage.y, subjectImage.width, subjectImage.height);
+            }
+
+            // Draw Stickers
+            stickers.forEach(stk => {
+                ctx.font = `${stk.size}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                // Drop shadow for sticker
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.6)';
+                ctx.shadowBlur = 15;
+                ctx.shadowOffsetX = 0;
+                ctx.shadowOffsetY = 8;
+                ctx.fillText(stk.content, stk.x, stk.y);
+                ctx.shadowBlur = 0; // reset
+            });
+
+            // Draw Text 1
+            if (state.t1.active && state.t1.text) {
+                drawAdvancedText(state.t1, canvasWidth, canvasHeight);
+            }
+
+            // Draw Text 2
+            if (state.t2.active && state.t2.text) {
+                drawAdvancedText(state.t2, canvasWidth, canvasHeight);
+            }
+        }
+
+        // Helper for viral typography rendering
+        function drawAdvancedText(txtObj, w, h) {
+            ctx.save();
+            ctx.font = `900 ${txtObj.size}px "${txtObj.font}", sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            // 3D Shadow depth effect
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+            ctx.shadowBlur = 25;
+            ctx.shadowOffsetX = 6;
+            ctx.shadowOffsetY = 12;
+
+            // Stroke outline for maximum CTR
+            if (txtObj.strokeWidth > 0) {
+                ctx.lineWidth = txtObj.strokeWidth;
+                ctx.strokeStyle = txtObj.strokeColor || '#000000';
+                ctx.lineJoin = 'round';
+                ctx.miterLimit = 2;
+                ctx.strokeText(txtObj.text, txtObj.x, txtObj.y);
+            }
+
+            // Main Fill Color
+            ctx.fillStyle = txtObj.color || '#ffffff';
+            ctx.fillText(txtObj.text, txtObj.x, txtObj.y);
+
+            ctx.restore();
+        }
+
+        // Drag and Drop interactivity on canvas
+        let isDragging = false;
+        let dragTarget = null;
+        let startX, startY;
+
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+
+            // Check distance to text 1
+            if (state.t1.active && Math.abs(mouseX - state.t1.x) < 300 && Math.abs(mouseY - state.t1.y) < 60) {
+                isDragging = true;
+                dragTarget = 't1';
+                startX = mouseX - state.t1.x;
+                startY = mouseY - state.t1.y;
+                return;
+            }
+            // Check distance to text 2
+            if (state.t2.active && Math.abs(mouseX - state.t2.x) < 300 && Math.abs(mouseY - state.t2.y) < 60) {
+                isDragging = true;
+                dragTarget = 't2';
+                startX = mouseX - state.t2.x;
+                startY = mouseY - state.t2.y;
+                return;
+            }
+
+            // Check stickers
+            for (let i = 0; i < stickers.length; i++) {
+                if (Math.abs(mouseX - stickers[i].x) < 60 && Math.abs(mouseY - stickers[i].y) < 60) {
+                    isDragging = true;
+                    dragTarget = `sticker_${i}`;
+                    startX = mouseX - stickers[i].x;
+                    startY = mouseY - stickers[i].y;
+                    return;
+                }
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const mouseX = (e.clientX - rect.left) * scaleX;
+            const mouseY = (e.clientY - rect.top) * scaleY;
+
+            if (dragTarget === 't1') {
+                state.t1.x = mouseX - startX;
+                state.t1.y = mouseY - startY;
+            } else if (dragTarget === 't2') {
+                state.t2.x = mouseX - startX;
+                state.t2.y = mouseY - startY;
+            } else if (dragTarget.startsWith('sticker_')) {
+                const idx = parseInt(dragTarget.split('_')[1]);
+                stickers[idx].x = mouseX - startX;
+                stickers[idx].y = mouseY - startY;
+            }
+            renderCanvas();
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            dragTarget = null;
+        });
+
+        // Touch support for mobile/tablet editing
+        canvas.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousedown', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            }
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1) {
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent('mousemove', {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            }
+        });
+
+        window.addEventListener('touchend', () => {
+            const mouseEvent = new MouseEvent('mouseup', {});
+            window.dispatchEvent(mouseEvent);
+        });
+
+        // Randomize viral layout button
+        function randomizeThumbnail() {
+            const phrases = [
+                { t1: "¡NO LO HAGAS!", t2: "GRAN ERROR" },
+                { t1: "¡FUNCIONA!", t2: "RESULTADOS 100%" },
+                { t1: "PROHIBIDO", t2: "VER ESTO" },
+                { t1: "¡MIRA ESTO!", t2: "IMPACTANTE" }
+            ];
+            const chosen = phrases[Math.floor(Math.random() * phrases.length)];
+            document.getElementById('t1-text').value = chosen.t1;
+            document.getElementById('t2-text').value = chosen.t2;
+
+            const colors = ['#facc15', '#ef4444', '#06b6d4', '#ec4899', '#ffffff'];
+            document.getElementById('t1-color').value = colors[Math.floor(Math.random() * colors.length)];
+            
+            updateState();
+            showToast('Modo Viral', 'Combinación generada automáticamente', 'success');
+        }
+
+        function resetAll() {
+            document.getElementById('bg-blur').value = 0;
+            document.getElementById('bg-vignette').value = 40;
+            document.getElementById('t1-text').value = '¡GIRA 100X!';
+            document.getElementById('t2-text').value = '¡ESTO ES INCREÍBLE!';
+            document.getElementById('filter-brightness').value = 100;
+            document.getElementById('filter-contrast').value = 110;
+            document.getElementById('filter-saturate').value = 120;
+            stickers = [];
+            subjectImage = null;
+            createPresetBackground('gaming');
+            updateState();
+            showToast('Restablecido', 'Valores devueltos al estado inicial', 'info');
+        }
+
+        // Export Thumbnail HD
+        function downloadThumbnail() {
+            renderCanvas();
+            const link = document.createElement('a');
+            link.download = `miniatura-viral-${currentFormat === '16:9' ? 'youtube' : 'shorts'}-${Date.now()}.png`;
+            link.href = canvas.toDataURL('image/png', 1.0);
+            link.click();
+            showToast('¡Descarga Exitosa!', 'Miniatura guardada en alta resolución (HD)', 'success');
+        }
+
+        // Modal Stripe Simulation
+        function openProModal() {
+            document.getElementById('pro-modal').classList.remove('hidden');
+            document.getElementById('pro-modal').classList.add('flex');
+        }
+
+        function closeProModal() {
+            document.getElementById('pro-modal').classList.remove('flex');
+            document.getElementById('pro-modal').classList.add('hidden');
+        }
+
+        function openCheckout() {
+            // Replace with Stripe payment link when user has it configured
+            window.location.href = "https://buy.stripe.com/6oUaEWdok16Meg31MT7kc01";
+        }
+
+        // Toast Notification Helper
+        function showToast(title, desc, type = 'success') {
+            const toast = document.getElementById('toast');
+            const titleEl = document.getElementById('toast-title');
+            const descEl = document.getElementById('toast-desc');
+            const iconEl = document.getElementById('toast-icon');
+
+            titleEl.innerText = title;
+            descEl.innerText = desc;
+            
+            if (type === 'success') {
+                iconEl.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5 text-emerald-400"></i>';
+            } else {
+                iconEl.innerHTML = '<i data-lucide="info" class="w-5 h-5 text-indigo-400"></i>';
+            }
+            lucide.createIcons();
+
+            toast.classList.remove('translate-y-32', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-32', 'opacity-0');
+            }, 3000);
+        }
+
+        // Initial render trigger
+        window.onload = function() {
+            updateState();
+        };
+    </script>
+</body>
+</html>
